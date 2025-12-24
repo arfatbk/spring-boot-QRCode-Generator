@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        .qr-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
+    <div class="container mx-auto px-4 py-12">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-bold text-gray-800 mb-4">
+                <span class="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                    QR Code Generator
+                </span>
+            </h1>
+            <p class="text-gray-600 text-lg">Create beautiful QR codes with your custom logo overlay</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                <div class="md:flex">
+                    <!-- Input Section -->
+                    <div class="md:w-1/2 p-8 bg-gradient-to-br from-purple-500 to-blue-600">
+                        <div class="h-full flex flex-col justify-center">
+                            <h2 class="text-2xl font-bold text-white mb-6">Enter Your Data</h2>
+                            <form id="qrForm" class="space-y-4">
+                                <div>
+                                    <label for="qrData" class="block text-sm font-medium text-white mb-2">
+                                        Text or URL
+                                    </label>
+                                    <textarea
+                                        id="qrData"
+                                        name="data"
+                                        rows="5"
+                                        class="w-full px-4 py-3 rounded-lg border-2 border-transparent focus:border-white focus:outline-none text-gray-800 placeholder-gray-400 transition duration-200"
+                                        placeholder="Enter text, URL, or any data to encode..."
+                                        required
+                                    ></textarea>
+                                </div>
+
+                                <!-- Color Customization -->
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="foregroundColor" class="block text-sm font-medium text-white mb-2">
+                                            QR Code Color
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input
+                                                type="color"
+                                                id="foregroundColor"
+                                                name="foregroundColor"
+                                                value="#5DADE2"
+                                                class="w-12 h-12 rounded cursor-pointer border-2 border-white"
+                                            />
+                                            <input
+                                                type="text"
+                                                id="foregroundColorHex"
+                                                value="#5DADE2"
+                                                maxlength="7"
+                                                class="flex-1 px-3 py-2 rounded-lg text-gray-800 text-sm font-mono"
+                                                placeholder="#5DADE2"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="backgroundColor" class="block text-sm font-medium text-white mb-2">
+                                            Background Color
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <input
+                                                type="color"
+                                                id="backgroundColor"
+                                                name="backgroundColor"
+                                                value="#FFFFFF"
+                                                class="w-12 h-12 rounded cursor-pointer border-2 border-white"
+                                            />
+                                            <input
+                                                type="text"
+                                                id="backgroundColorHex"
+                                                value="#FFFFFF"
+                                                maxlength="7"
+                                                class="flex-1 px-3 py-2 rounded-lg text-gray-800 text-sm font-mono"
+                                                placeholder="#FFFFFF"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Color Presets -->
+                                <div class="mt-4">
+                                    <p class="text-white text-xs font-medium mb-2">Color Presets:</p>
+                                    <div class="grid grid-cols-5 gap-2">
+                                        <button type="button" onclick="applyColorPreset('#5DADE2', '#FFFFFF')"
+                                                class="h-8 rounded border-2 border-white hover:scale-110 transition"
+                                                style="background: linear-gradient(to right, #5DADE2 50%, #FFFFFF 50%);"
+                                                title="Light Blue">
+                                        </button>
+                                        <button type="button" onclick="applyColorPreset('#FF0000', '#FFFFFF')"
+                                                class="h-8 rounded border-2 border-white hover:scale-110 transition"
+                                                style="background: linear-gradient(to right, #FF0000 50%, #FFFFFF 50%);"
+                                                title="Red">
+                                        </button>
+                                        <button type="button" onclick="applyColorPreset('#00FF00', '#000000')"
+                                                class="h-8 rounded border-2 border-white hover:scale-110 transition"
+                                                style="background: linear-gradient(to right, #00FF00 50%, #000000 50%);"
+                                                title="Green on Black">
+                                        </button>
+                                        <button type="button" onclick="applyColorPreset('#000000', '#FFFFFF')"
+                                                class="h-8 rounded border-2 border-white hover:scale-110 transition"
+                                                style="background: linear-gradient(to right, #000000 50%, #FFFFFF 50%);"
+                                                title="Classic">
+                                        </button>
+                                        <button type="button" onclick="applyColorPreset('#FFFFFF', '#000000')"
+                                                class="h-8 rounded border-2 border-white hover:scale-110 transition"
+                                                style="background: linear-gradient(to right, #FFFFFF 50%, #000000 50%);"
+                                                title="Dark Mode">
+                                        </button>
+                                        <button type="button" onclick="applyColorPreset('#FF6B6B', '#FFF3E0')"
+                                                class="h-8 rounded border-2 border-white hover:scale-110 transition"
+                                                style="background: linear-gradient(to right, #FF6B6B 50%, #FFF3E0 50%);"
+                                                title="Coral">
+                                        </button>
+                                        <button type="button" onclick="applyColorPreset('#4ECDC4', '#F7FFF7')"
+                                                class="h-8 rounded border-2 border-white hover:scale-110 transition"
+                                                style="background: linear-gradient(to right, #4ECDC4 50%, #F7FFF7 50%);"
+                                                title="Teal">
+                                        </button>
+                                        <button type="button" onclick="applyColorPreset('#FFD700', '#2C3E50')"
+                                                class="h-8 rounded border-2 border-white hover:scale-110 transition"
+                                                style="background: linear-gradient(to right, #FFD700 50%, #2C3E50 50%);"
+                                                title="Gold">
+                                        </button>
+                                        <button type="button" onclick="applyColorPreset('#9B59B6', '#ECF0F1')"
+                                                class="h-8 rounded border-2 border-white hover:scale-110 transition"
+                                                style="background: linear-gradient(to right, #9B59B6 50%, #ECF0F1 50%);"
+                                                title="Purple">
+                                        </button>
+                                        <button type="button" onclick="applyColorPreset('#E74C3C', '#FFFACD')"
+                                                class="h-8 rounded border-2 border-white hover:scale-110 transition"
+                                                style="background: linear-gradient(to right, #E74C3C 50%, #FFFACD 50%);"
+                                                title="Sunset">
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    class="w-full bg-white text-purple-600 font-bold py-3 px-6 rounded-lg hover:bg-gray-100 transform hover:scale-105 transition duration-200 shadow-lg"
+                                >
+                                    Generate QR Code
+                                </button>
+                            </form>
+
+                            <!-- Quick Examples -->
+                            <div class="mt-6 space-y-2">
+                                <p class="text-white text-sm font-medium">Quick examples:</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <button onclick="fillExample('https://github.com')"
+                                            class="text-xs bg-white bg-opacity-20 text-white px-3 py-1 rounded-full hover:bg-opacity-30 transition">
+                                        GitHub URL
+                                    </button>
+                                    <button onclick="fillExample('Hello World!')"
+                                            class="text-xs bg-white bg-opacity-20 text-white px-3 py-1 rounded-full hover:bg-opacity-30 transition">
+                                        Text
+                                    </button>
+                                    <button onclick="fillExample('mailto:contact@example.com')"
+                                            class="text-xs bg-white bg-opacity-20 text-white px-3 py-1 rounded-full hover:bg-opacity-30 transition">
+                                        Email
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- QR Code Display Section -->
+                    <div class="md:w-1/2 p-8 bg-gray-50">
+                        <div class="h-full flex flex-col items-center justify-center">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-6">Your QR Code</h2>
+
+                            <!-- Loading State -->
+                            <div id="loading" class="hidden">
+                                <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600"></div>
+                                <p class="mt-4 text-gray-600">Generating...</p>
+                            </div>
+
+                            <!-- Empty State -->
+                            <div id="emptyState" class="text-center">
+                                <svg class="w-32 h-32 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                                </svg>
+                                <p class="text-gray-500 text-lg">Your QR code will appear here</p>
+                                <p class="text-gray-400 text-sm mt-2">Enter some data and click generate</p>
+                            </div>
+
+                            <!-- QR Code Result -->
+                            <div id="qrResult" class="hidden fade-in">
+                                <div class="bg-white p-6 rounded-2xl shadow-xl">
+                                    <img id="qrImage" src="" alt="QR Code" class="w-full max-w-sm rounded-lg">
+                                </div>
+                                <button
+                                    id="downloadBtn"
+                                    class="mt-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:shadow-lg transform hover:scale-105 transition duration-200"
+                                >
+                                    Download QR Code
+                                </button>
+                            </div>
+
+                            <!-- Error State -->
+                            <div id="errorState" class="hidden text-center">
+                                <svg class="w-16 h-16 mx-auto text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <p class="text-red-600 text-lg font-semibold">Oops! Something went wrong</p>
+                                <p class="text-gray-600 mt-2">Please try again</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="mt-12 grid md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-lg text-center">
+                    <div class="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Fast Generation</h3>
+                    <p class="text-gray-600 text-sm">Create QR codes instantly with high-quality output</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg text-center">
+                    <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Custom Logo</h3>
+                    <p class="text-gray-600 text-sm">Your brand logo automatically overlaid on every code</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg text-center">
+                    <div class="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">High Quality</h3>
+                    <p class="text-gray-600 text-sm">Error correction ensures codes work even if damaged</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('qrForm');
+        const loading = document.getElementById('loading');
+        const emptyState = document.getElementById('emptyState');
+        const qrResult = document.getElementById('qrResult');
+        const errorState = document.getElementById('errorState');
+        const qrImage = document.getElementById('qrImage');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const qrDataInput = document.getElementById('qrData');
+
+        // Color picker elements
+        const foregroundColor = document.getElementById('foregroundColor');
+        const foregroundColorHex = document.getElementById('foregroundColorHex');
+        const backgroundColor = document.getElementById('backgroundColor');
+        const backgroundColorHex = document.getElementById('backgroundColorHex');
+
+        // Sync color picker with text input
+        foregroundColor.addEventListener('input', (e) => {
+            foregroundColorHex.value = e.target.value.toUpperCase();
+        });
+
+        foregroundColorHex.addEventListener('input', (e) => {
+            const value = e.target.value;
+            if (/^#[0-9A-F]{6}$/i.test(value)) {
+                foregroundColor.value = value;
+            }
+        });
+
+        backgroundColor.addEventListener('input', (e) => {
+            backgroundColorHex.value = e.target.value.toUpperCase();
+        });
+
+        backgroundColorHex.addEventListener('input', (e) => {
+            const value = e.target.value;
+            if (/^#[0-9A-F]{6}$/i.test(value)) {
+                backgroundColor.value = value;
+            }
+        });
+
+        function hideAllStates() {
+            loading.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            qrResult.classList.add('hidden');
+            errorState.classList.add('hidden');
+        }
+
+        function fillExample(text) {
+            qrDataInput.value = text;
+            qrDataInput.focus();
+        }
+
+        function applyColorPreset(fgColor, bgColor) {
+            foregroundColor.value = fgColor;
+            backgroundColor.value = bgColor;
+            foregroundColorHex.value = fgColor.toUpperCase();
+            backgroundColorHex.value = bgColor.toUpperCase();
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = qrDataInput.value.trim();
+            if (!data) return;
+
+            hideAllStates();
+            loading.classList.remove('hidden');
+
+            try {
+                const formData = new FormData();
+                formData.append('data', data);
+                // Remove # from color values for hex format
+                formData.append('foregroundColor', foregroundColor.value.substring(1));
+                formData.append('backgroundColor', backgroundColor.value.substring(1));
+
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to generate QR code');
+                }
+
+                const blob = await response.blob();
+                const imageUrl = URL.createObjectURL(blob);
+
+                qrImage.src = imageUrl;
+
+                hideAllStates();
+                qrResult.classList.remove('hidden');
+
+                downloadBtn.onclick = () => {
+                    const link = document.createElement('a');
+                    link.href = imageUrl;
+                    link.download = 'qrcode.png';
+                    link.click();
+                };
+
+            } catch (error) {
+                console.error('Error:', error);
+                hideAllStates();
+                errorState.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
+
