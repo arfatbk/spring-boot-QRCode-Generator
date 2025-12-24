@@ -53,6 +53,8 @@ public class QrCodeController {
         LOGGER.info("Received request to generate QR code for data length: {}, colors: fg={}, bg={}, hasCustomLogo={}",
                     data.length(), foregroundColor, backgroundColor, logoFile != null && !logoFile.isEmpty());
 
+        if(Math.random() < 0.5)
+                throw new IllegalArgumentException("Testing observability");
         try {
             // Validate custom logo if provided
             if (logoFile != null && !logoFile.isEmpty()) {

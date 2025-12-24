@@ -1,0 +1,49 @@
+
+
+
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0  # 100% sampling for development
+  otlp:
+    metrics:
+      export:
+        url: http://localhost:4318/v1/metrics
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: http://localhost:4318/v1/traces
+    logging:
+      export:
+        otlp:
+          endpoint: http://localhost:4318/v1/logs
+
+
+
+spring:
+  application:
+    name: qr
+  # Multipart configuration (for future file upload support)
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+# Server configuration
+server:
+  port: 8080
+
+  # Logging configuration
+  #logging.level.root=INFO
+  #logging.level.com.example.qr=DEBUG
+  #logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} - %msg%n
+logging:
+  structured:
+    format:
+      console: ecs
+    ecs:
+      service:
+        name: QRService
+        version: 1.1.0
+        environment: Production
