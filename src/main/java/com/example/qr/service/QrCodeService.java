@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -18,6 +19,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 @Service
 public class QrCodeService {
@@ -27,15 +29,15 @@ public class QrCodeService {
     private static final int LOGO_SIZE = 60;
     private static final int LOGO_BORDER = 8;
 
-    private final Resource logoResource;
+    private final Resource defaultLogoResource;
     private final int defaultForegroundColor;
     private final int defaultBackgroundColor;
 
     public QrCodeService(
-            @Value("classpath:logo.svg") Resource logoResource,
+            @Value("classpath:logo.svg") Resource defaultLogoResource,
             @Value("${qr.foreground-color:000000}") String foregroundColorHex,
             @Value("${qr.background-color:FFFFFF}") String backgroundColorHex) {
-        this.logoResource = logoResource;
+        this.defaultLogoResource = defaultLogoResource;
         this.defaultForegroundColor = parseHexColor(foregroundColorHex);
         this.defaultBackgroundColor = parseHexColor(backgroundColorHex);
     }
@@ -43,10 +45,11 @@ public class QrCodeService {
     public byte[] generateQrCodeWithLogo(String data) throws IOException, TranscoderException {
         String fgHex = String.format("%06X", defaultForegroundColor & 0xFFFFFF);
         String bgHex = String.format("%06X", defaultBackgroundColor & 0xFFFFFF);
-        return generateQrCodeWithLogo(data, fgHex, bgHex);
+        return generateQrCodeWithLogo(data, fgHex, bgHex, null);
     }
 
-    public byte[] generateQrCodeWithLogo(String data, String foregroundColorHex, String backgroundColorHex)
+    public byte[] generateQrCodeWithLogo(String data, String foregroundColorHex, String backgroundColorHex,
+                                          MultipartFile customLogo)
             throws IOException, TranscoderException {
         if (data == null || data.isEmpty()) {
             throw new IllegalArgumentException("QR code data cannot be null or empty");
@@ -56,7 +59,8 @@ public class QrCodeService {
         int fgColor = parseHexColor(foregroundColorHex);
         int bgColor = parseHexColor(backgroundColorHex);
 
-        LOGGER.debug("Generating QR code for data: {}, fg={}, bg={}", data, foregroundColorHex, backgroundColorHex);
+        LOGGER.debug("Generating QR code for data: {}, fg={}, bg={}, customLogo={}",
+                     data, foregroundColorHex, backgroundColorHex, customLogo != null && !customLogo.isEmpty());
 
         // Generate QR code using Nayuki library with high error correction
         QrCode qrCode = QrCode.encodeText(data, QrCode.Ecc.HIGH);
@@ -67,13 +71,66 @@ public class QrCodeService {
         int border = 1;
         BufferedImage qrImage = toBufferedImage(qrCode, scale, border, fgColor, bgColor);
 
-        BufferedImage logo = convertSvgToPng(logoResource);
+        // Load logo (custom or default)
+        BufferedImage logo = loadLogo(customLogo);
         BufferedImage finalImage = overlayLogo(qrImage, logo);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageIO.write(finalImage, "png", baos);
         LOGGER.debug("QR code generated successfully, size: {} bytes", baos.size());
         return baos.toByteArray();
+    }
+
+    private BufferedImage loadLogo(MultipartFile customLogo) throws IOException, TranscoderException {
+        if (customLogo != null && !customLogo.isEmpty()) {
+            return loadCustomLogo(customLogo);
+        }
+        return convertSvgToPng(defaultLogoResource);
+    }
+
+    private BufferedImage loadCustomLogo(MultipartFile logoFile) throws IOException, TranscoderException {
+        String contentType = logoFile.getContentType();
+
+        if ("image/svg+xml".equals(contentType)) {
+            return convertSvgToPng(logoFile.getInputStream());
+        } else if ("image/png".equals(contentType) || "image/jpeg".equals(contentType)) {
+            BufferedImage originalLogo = ImageIO.read(logoFile.getInputStream());
+            if (originalLogo == null) {
+                throw new IOException("Failed to read logo image");
+            }
+            return resizeLogo(originalLogo);
+        } else {
+            throw new IllegalArgumentException("Unsupported logo format: " + contentType);
+        }
+    }
+
+    private BufferedImage resizeLogo(BufferedImage original) {
+        // Calculate dimensions to maintain aspect ratio
+        int originalWidth = original.getWidth();
+        int originalHeight = original.getHeight();
+
+        double aspectRatio = (double) originalWidth / originalHeight;
+        int newWidth = LOGO_SIZE;
+        int newHeight = LOGO_SIZE;
+
+        if (aspectRatio > 1) {
+            newHeight = (int) (LOGO_SIZE / aspectRatio);
+        } else {
+            newWidth = (int) (LOGO_SIZE * aspectRatio);
+        }
+
+        BufferedImage resized = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = resized.createGraphics();
+
+        // High-quality rendering
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        g.drawImage(original, 0, 0, newWidth, newHeight, null);
+        g.dispose();
+
+        return resized;
     }
 
     private int parseHexColor(String hexColor) {
@@ -140,11 +197,15 @@ public class QrCodeService {
 
 
     private BufferedImage convertSvgToPng(Resource svgResource) throws IOException, TranscoderException {
-        PNGTranscoder transcoder = new PNGTranscoder();
-        transcoder.addTranscodingHint(SVGAbstractTranscoder.KEY_WIDTH, (float) QrCodeService.LOGO_SIZE);
-        transcoder.addTranscodingHint(SVGAbstractTranscoder.KEY_HEIGHT, (float) QrCodeService.LOGO_SIZE);
+        return convertSvgToPng(svgResource.getInputStream());
+    }
 
-        TranscoderInput input = new TranscoderInput(svgResource.getInputStream());
+    private BufferedImage convertSvgToPng(InputStream svgInputStream) throws IOException, TranscoderException {
+        PNGTranscoder transcoder = new PNGTranscoder();
+        transcoder.addTranscodingHint(SVGAbstractTranscoder.KEY_WIDTH, (float) LOGO_SIZE);
+        transcoder.addTranscodingHint(SVGAbstractTranscoder.KEY_HEIGHT, (float) LOGO_SIZE);
+
+        TranscoderInput input = new TranscoderInput(svgInputStream);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         TranscoderOutput output = new TranscoderOutput(outputStream);
 

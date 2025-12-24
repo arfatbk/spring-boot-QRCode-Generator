@@ -53,6 +53,39 @@
                                     ></textarea>
                                 </div>
 
+                                <!-- Logo Upload -->
+                                <div>
+                                    <label for="logoUpload" class="block text-sm font-medium text-white mb-2">
+                                        Custom Logo (Optional)
+                                    </label>
+                                    <div class="flex items-center space-x-2">
+                                        <label for="logoUpload" class="flex-1 cursor-pointer">
+                                            <div class="flex items-center justify-center px-4 py-3 bg-white bg-opacity-20 rounded-lg border-2 border-dashed border-white hover:bg-opacity-30 transition">
+                                                <svg class="w-5 h-5 text-white mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                </svg>
+                                                <span id="logoFileName" class="text-white text-sm">Choose file...</span>
+                                            </div>
+                                        </label>
+                                        <button type="button" id="clearLogo" class="hidden px-3 py-3 bg-red-500 bg-opacity-80 rounded-lg hover:bg-opacity-100 transition" title="Remove logo">
+                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <input
+                                        type="file"
+                                        id="logoUpload"
+                                        name="logo"
+                                        accept=".svg,.png,.jpg,.jpeg,image/svg+xml,image/png,image/jpeg"
+                                        class="hidden"
+                                    />
+                                    <p class="text-white text-xs mt-1 opacity-80">SVG, PNG, or JPEG • Max 5MB • Default logo used if not provided</p>
+                                    <div id="logoPreview" class="hidden mt-2 p-2 bg-white bg-opacity-20 rounded-lg">
+                                        <img id="logoPreviewImg" src="" alt="Logo preview" class="w-16 h-16 object-contain mx-auto" />
+                                    </div>
+                                </div>
+
                                 <!-- Color Customization -->
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
@@ -251,7 +284,7 @@
                         </svg>
                     </div>
                     <h3 class="font-bold text-lg text-gray-800 mb-2">Custom Logo</h3>
-                    <p class="text-gray-600 text-sm">Your brand logo automatically overlaid on every code</p>
+                    <p class="text-gray-600 text-sm">Upload your own logo or use the default brand logo</p>
                 </div>
                 <div class="bg-white p-6 rounded-xl shadow-lg text-center">
                     <div class="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -281,6 +314,57 @@
         const foregroundColorHex = document.getElementById('foregroundColorHex');
         const backgroundColor = document.getElementById('backgroundColor');
         const backgroundColorHex = document.getElementById('backgroundColorHex');
+
+        // Logo upload elements
+        const logoUpload = document.getElementById('logoUpload');
+        const logoFileName = document.getElementById('logoFileName');
+        const clearLogo = document.getElementById('clearLogo');
+        const logoPreview = document.getElementById('logoPreview');
+        const logoPreviewImg = document.getElementById('logoPreviewImg');
+
+        // Handle logo file selection
+        logoUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file size
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Logo file size must be less than 5MB');
+                    logoUpload.value = '';
+                    return;
+                }
+
+                // Validate file type
+                const validTypes = ['image/svg+xml', 'image/png', 'image/jpeg'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Please select a valid image file (SVG, PNG, or JPEG)');
+                    logoUpload.value = '';
+                    return;
+                }
+
+                logoFileName.textContent = file.name;
+                clearLogo.classList.remove('hidden');
+
+                // Show preview for raster images
+                if (file.type === 'image/png' || file.type === 'image/jpeg') {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        logoPreviewImg.src = e.target.result;
+                        logoPreview.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    logoPreview.classList.add('hidden');
+                }
+            }
+        });
+
+        // Clear logo selection
+        clearLogo.addEventListener('click', () => {
+            logoUpload.value = '';
+            logoFileName.textContent = 'Choose file...';
+            clearLogo.classList.add('hidden');
+            logoPreview.classList.add('hidden');
+        });
 
         // Sync color picker with text input
         foregroundColor.addEventListener('input', (e) => {
@@ -339,6 +423,11 @@
                 // Remove # from color values for hex format
                 formData.append('foregroundColor', foregroundColor.value.substring(1));
                 formData.append('backgroundColor', backgroundColor.value.substring(1));
+
+                // Add logo file if selected
+                if (logoUpload.files.length > 0) {
+                    formData.append('logo', logoUpload.files[0]);
+                }
 
                 const response = await fetch('/generate', {
                     method: 'POST',
