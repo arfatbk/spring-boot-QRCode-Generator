@@ -1,6 +1,12 @@
 # Beautiful QR Code Generator
 
-A modern, web-based QR code generator with custom logo overlay support. Built with Spring Boot and featuring a beautiful, responsive UI.
+#### A modern, web-based QR code generator with custom logo overlay support. Built with Spring Boot and featuring a beautiful, responsive UI.
+
+---
+
+![sample.PNG](docs/sample.PNG)
+
+---
 
 ## Features
 
@@ -136,13 +142,22 @@ qr/
 
 ## Customizing the Logo
 
-Replace `src/main/resources/logo.svg` with your own SVG logo file. The logo will be automatically overlaid on the center of generated QR codes with a white border for better visibility.
+Replace `src/main/resources/logo.svg` with your own SVG logo file. The logo will be automatically overlaid in the center of generated QR codes.
 
 **Logo Recommendations**:
 - Use SVG format for best quality
+- Ensure transparent background (no background rectangles in SVG)
 - Keep the design simple and recognizable
 - Use high contrast colors
-- Recommended size: 80x80 pixels (configurable)
+- Optimize viewBox to fit actual logo content
+- Recommended display size: 60x60 pixels (configurable)
+
+**Logo Styling** (automatically applied):
+- White rounded background with 8px padding
+- 2px black border for definition
+- Subtle drop shadow for depth
+- 12px corner radius for modern look
+- Automatically centered on QR code
 
 ## Testing
 
@@ -158,28 +173,56 @@ Run tests with coverage:
 mvn clean test jacoco:report
 ```
 
+**Test Coverage**:
+- **Service Tests**: 20 tests covering all business logic
+  - Parameterized tests for color validation
+  - Edge cases (null, empty, invalid formats)
+  - Multiple data formats (URLs, email, phone, WiFi, JSON, Unicode)
+- **Controller Tests**: 11 tests validating HTTP layer
+  - Mock-based unit tests
+  - Exception handling verification
+  - Response validation
+
+**Total**: 31 comprehensive tests
+
 ## Best Practices Implemented
 
-- **SOLID Principles**: Clean separation of concerns
-- **Dependency Injection**: Constructor-based injection
-- **Proper Logging**: SLF4J for consistent logging
-- **Exception Handling**: Proper error handling and user feedback
-- **Unit Testing**: Comprehensive test coverage
-- **Code Quality**: Following Java coding standards
-- **Documentation**: Javadoc and inline comments
-- **Configuration Management**: Externalized configuration
+- **SOLID Principles**: Clean separation of concerns with single responsibility
+- **Thread-Safe Design**: Immutable service fields, stateless request handling
+- **Dependency Injection**: Constructor-based injection throughout
+- **Proper Logging**: SLF4J with contextual information (data length, colors)
+- **Input Validation**: Comprehensive validation with descriptive error messages
+- **Exception Handling**: Proper error handling with specific exceptions
+- **Parameterized Testing**: JUnit 5 parameterized tests for better maintainability
+- **Code Quality**: Following Java coding standards and best practices
+- **Documentation**: Javadoc and inline comments for complex logic
+- **Configuration Management**: Externalized configuration with sensible defaults
+- **No Code Duplication**: DRY principle applied throughout
 
 ## Features Roadmap
 
-- [ ] Customizable colors (foreground and background)
+### ✅ Completed
+- [x] Customizable colors (foreground and background)
+- [x] Color presets with visual preview
+- [x] Smart color rendering (black corners, custom data)
+- [x] Transparent logo backgrounds
+- [x] Thread-safe service implementation
+- [x] Comprehensive test coverage
+- [x] Input validation with clear error messages
+
+### 🚀 Future Enhancements
 - [ ] Multiple QR code sizes
 - [ ] Batch QR code generation
-- [ ] QR code with custom shapes
+- [ ] QR code with custom shapes (rounded modules)
 - [ ] Analytics and tracking
 - [ ] User accounts and saved QR codes
 - [ ] API rate limiting
-- [ ] PNG logo support
+- [ ] PNG/JPG logo support (in addition to SVG)
 - [ ] Vector output formats (SVG, PDF)
+- [ ] QR code templates
+- [ ] Bulk upload from CSV
+
+## Recent Changes
 
 ## Contributing
 
@@ -195,7 +238,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- [ZXing](https://github.com/zxing/zxing) for QR code generation
+- [Nayuki QR Code Generator](https://github.com/nayuki/QR-Code-generator) for excellent QR code generation library
 - [Apache Batik](https://xmlgraphics.apache.org/batik/) for SVG processing
 - [Tailwind CSS](https://tailwindcss.com/) for beautiful styling
 - [Spring Boot](https://spring.io/projects/spring-boot) for the robust framework
@@ -206,5 +249,5 @@ For issues, questions, or contributions, please open an issue on GitHub.
 
 ---
 
-Made with ❤️ using Spring Boot
+Made with ❤️ using Spring Boot 4 and Java 25
 
